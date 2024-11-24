@@ -78,7 +78,7 @@ func GetRecipes() Recipes {
 				disregardRecipe = true
 			}
 
-		} else if productProgress < productN {
+		} else if productProgress <= productN {
 			// if faulty ingredient is found, skip whole recipe
 			if disregardRecipe {
 				continue
@@ -86,7 +86,6 @@ func GetRecipes() Recipes {
 
 			// parse recipe ingredients
 			productEntry := strings.Split(scanner.Text(), ",") // format: name,weight
-			productProgress++
 
 			if len(productEntry) != 2 {
 				mylog.Printf(mylogger.ERROR+"Format of product entry in recipes file is not correct: %v (len %d)\n", productEntry, len(productEntry))
@@ -101,9 +100,13 @@ func GetRecipes() Recipes {
 				disregardRecipe = true
 			}
 
+			// reset progress so that new recipe will be read in a new "state"
+			if productProgress == productN {
+				productProgress = -1
+				recipeProgress++
+			}
 		} else {
-			productProgress = -1
-			recipeProgress++
+			mylog.Fatalf(mylogger.ERROR+"Unknown error, productProgress counter overflew productN: %d > %d\n", productProgress, productN)
 		}
 	}
 

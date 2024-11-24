@@ -20,7 +20,7 @@ func chooseNewRecipe(recips recipes.Recipes, remaining *kitchen.RemainingProduct
 			for _, gr := range goodRecipes {
 				if recipeType == gr.Typ {
 					newRec = gr
-					mylog.Printf(mylogger.INFO+"new recipe is chosen: %v\n", newRec)
+					mylog.Printf(mylogger.INFO+"New recipe is chosen: %v\n", newRec)
 					return
 				}
 			}
@@ -35,7 +35,7 @@ func chooseNewRecipe(recips recipes.Recipes, remaining *kitchen.RemainingProduct
 		}
 	}
 	if !found {
-		mylog.Printf(mylogger.WARN+"Recipe of type \"%q\" was not found\n", recipeType.String())
+		mylog.Printf(mylogger.WARN+"Recipe of type %q was not found\n", recipeType.String())
 		return
 	}
 
@@ -51,13 +51,13 @@ func main() {
 	mylog = mylogger.NewLogger("MAIN: ")
 	defer mylogger.CloseResources()
 
-	mylog.Println(mylogger.INFO + "beginning execution")
+	mylog.Println(mylogger.INFO + "Beginning execution")
 	// prods := recipes.GetProducts()
 	recps := recipes.GetRecipes()
-	mylog.Println(mylogger.INFO + "reading kitchen state")
+	mylog.Println(mylogger.INFO + "Reading kitchen state")
 	remainingProducts := kitchen.ReadKitchenState()
 
-	mylog.Println(mylogger.INFO + "choosing recipes")
+	mylog.Println(mylogger.INFO + "Choosing recipes")
 	// get all recipes to further calculate what is needed to buy
 
 	breakfasts := make(recipes.Recipes, 0, 7)
@@ -72,7 +72,7 @@ func main() {
 
 	totalNeeded := make(recipes.Ingredients)
 
-	mylog.Println(mylogger.INFO + "summing ingredients")
+	mylog.Println(mylogger.INFO + "Summing ingredients")
 	// this function assures that when same ingredient comes up, it is correctly accounted for
 	correctIngredientSum := func(name string, ingWeight int) int {
 		if wght, ok := totalNeeded[name]; ok {
@@ -102,7 +102,7 @@ func main() {
 		}
 	}
 
-	mylog.Println(mylogger.INFO + "outputting result")
+	mylog.Println(mylogger.INFO + "Outputting result")
 	// presenting the user with output and calculate how much we bought (need minimal purchasing quantity for this) and how much is remaining after this
 	fmt.Println("Here's the list of products that you need to buy for the next week:")
 	i := 1
