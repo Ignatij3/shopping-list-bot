@@ -24,7 +24,7 @@ func ReadKitchenState() RemainingProducts {
 		parsedLine := strings.Split(line, ",") // format: name,weight
 
 		if weight, err := strconv.Atoi(parsedLine[1]); err != nil {
-			mylog.Printf(mylogger.ERROR+"Couldn't parse weight in remaining products entry \"%s\", %v\n", parsedLine[1], err)
+			mylog.Printf(mylogger.ERROR+"Couldn't parse weight in remaining products entry \"%q\", %v\n", parsedLine[1], err)
 		} else {
 			remainingProd[parsedLine[0]] = weight
 		}

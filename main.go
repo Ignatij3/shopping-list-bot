@@ -13,7 +13,7 @@ var mylog *mylogger.Mylogger
 // chooseNewRecipe will randomly allocate a new recipe of specified type.
 // Changes must be saved to the file manually.
 func chooseNewRecipe(recips recipes.Recipes, remaining *kitchen.RemainingProducts, recipeType recipes.DishType) (newRec recipes.Recipe) {
-	mylog.Printf(mylogger.INFO+"chooseNewRecipe is called for %s recipe type\n", recipeType.String())
+	mylog.Printf(mylogger.INFO+"chooseNewRecipe is called for %q recipe type\n", recipeType.String())
 	// first, we go through recipes that have the closest ingredients to what we already have
 	for dist := 1; dist < 2; dist++ {
 		if goodRecipes, ok := remaining.FindMatchingRecipes(recips, dist); ok {
@@ -35,7 +35,7 @@ func chooseNewRecipe(recips recipes.Recipes, remaining *kitchen.RemainingProduct
 		}
 	}
 	if !found {
-		mylog.Printf(mylogger.WARN+"Recipe of type \"%s\" was not found\n", recipeType.String())
+		mylog.Printf(mylogger.WARN+"Recipe of type \"q\" was not found\n", recipeType.String())
 		return
 	}
 

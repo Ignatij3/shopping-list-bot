@@ -59,12 +59,12 @@ func GetRecipes() Recipes {
 			case "soup":
 				rtypeenum = SOUP
 			default:
-				mylog.Printf(mylogger.WARN+"Unknown recipe type: \"%s\"\n", recipeHeader[1])
+				mylog.Printf(mylogger.WARN+"Unknown recipe type: \"%q\"\n", recipeHeader[1])
 			}
 
 			if disregardRecipe {
 				// replacing latest recipe with new one, since old is faulty
-				mylog.Printf(mylogger.WARN+"Disregarding recipe \"%s\" due to faulty parsing\n", rcps[len(rcps)-1].Name)
+				mylog.Printf(mylogger.WARN+"Disregarding recipe \"%q\" due to faulty parsing\n", rcps[len(rcps)-1].Name)
 				rcps[len(rcps)-1] = Recipe{Name: recipeHeader[0], Typ: rtypeenum, ing: Ingredients{}}
 				disregardRecipe = false
 			} else {
@@ -74,7 +74,7 @@ func GetRecipes() Recipes {
 			if num, nok := strconv.Atoi(strings.TrimSuffix(recipeHeader[2], "\n")); nok == nil {
 				productN = num
 			} else {
-				mylog.Printf(mylogger.ERROR+"Product amount in recipes file cannot be parsed: %s, %v\n", recipeHeader[2], err)
+				mylog.Printf(mylogger.ERROR+"Product amount in recipes file cannot be parsed: %q, %v\n", recipeHeader[2], err)
 				disregardRecipe = true
 			}
 
@@ -97,7 +97,7 @@ func GetRecipes() Recipes {
 			if num, nok := strconv.Atoi(strings.TrimSuffix(productEntry[1], "\n")); nok == nil {
 				rcps[len(rcps)-1].ing[productEntry[0]] = num
 			} else {
-				mylog.Printf(mylogger.ERROR+"product weight in recipes file cannot be parsed: %s, %v\n", productEntry[1], err)
+				mylog.Printf(mylogger.ERROR+"product weight in recipes file cannot be parsed: %q, %v\n", productEntry[1], err)
 				disregardRecipe = true
 			}
 
@@ -108,7 +108,7 @@ func GetRecipes() Recipes {
 	}
 
 	if disregardRecipe {
-		mylog.Printf(mylogger.ERROR+"Recipe ended sooner than anticipated, disregarding last recipe \"%s\"\n", rcps[len(rcps)-1].Name)
+		mylog.Printf(mylogger.ERROR+"Recipe ended sooner than anticipated, disregarding last recipe \"%q\"\n", rcps[len(rcps)-1].Name)
 		rcps = rcps[:len(rcps)-1]
 		disregardRecipe = false
 	}
@@ -139,22 +139,22 @@ func GetProducts() Products {
 		}
 
 		if calr, err = strconv.Atoi(parsedLine[1]); err != nil {
-			mylog.Printf(mylogger.ERROR+"Couldn't parse calories in product entry \"%s\", %v\n", parsedLine[1], err)
+			mylog.Printf(mylogger.ERROR+"Couldn't parse calories in product entry \"%q\", %v\n", parsedLine[1], err)
 			continue
 		}
 
 		if prot, err = strconv.ParseFloat(parsedLine[2], 32); err != nil {
-			mylog.Printf(mylogger.ERROR+"Couldn't parse proteins in product entry \"%s\", %v\n", parsedLine[2], err)
+			mylog.Printf(mylogger.ERROR+"Couldn't parse proteins in product entry \"%q\", %v\n", parsedLine[2], err)
 			continue
 		}
 
 		if fats, err = strconv.ParseFloat(parsedLine[3], 32); err != nil {
-			mylog.Printf(mylogger.ERROR+"Couldn't parse fats in product entry \"%s\", %v\n", parsedLine[3], err)
+			mylog.Printf(mylogger.ERROR+"Couldn't parse fats in product entry \"%q\", %v\n", parsedLine[3], err)
 			continue
 		}
 
 		if carb, err = strconv.ParseFloat(parsedLine[4], 32); err != nil {
-			mylog.Printf(mylogger.ERROR+"Couldn't parse carbs in product entry \"%s\", %v\n", parsedLine[4], err)
+			mylog.Printf(mylogger.ERROR+"Couldn't parse carbs in product entry \"%q\", %v\n", parsedLine[4], err)
 			continue
 		}
 
