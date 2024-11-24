@@ -35,7 +35,7 @@ func chooseNewRecipe(recips recipes.Recipes, remaining *kitchen.RemainingProduct
 		}
 	}
 	if !found {
-		mylog.Printf(mylogger.WARN+"Recipe of type \"q\" was not found\n", recipeType.String())
+		mylog.Printf(mylogger.WARN+"Recipe of type \"%q\" was not found\n", recipeType.String())
 		return
 	}
 
