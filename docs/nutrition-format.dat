@@ -1,0 +1,30 @@
+----PRODUCTS----
+Each line contains 6 comma-separated entries for each product:
+1 - name of the product.
+2 - calories in 100g, positive integer.
+3 - proteins in 100g, floating-point non-negative number.
+4 - fats in 100g, floating-point non-negative number.
+5 - carbohydrates in 100g, floating-point non-negative number.
+
+All floating point numbers have precision of 1 number after point.
+
+Example:
+eggs,157.0,12.7,10.9,0.7,650
+
+----RECIPES----
+First line of file contains number of recipes present, k, in this file (this is not number of lines in file). First line of each recipe contains its name, type of dish - {breakfast,lunch,salad,soup} and number of ingredients, N. Next N lines contain name of product and it's weight. Weight is a positive integer, usually not exceeding 2000. Caloric content may be calculated using former file.
+
+Example:
+2
+omelette,breakfast,2
+milk,80
+eggs,325
+sandwich,lunch,3
+bread,60
+butter,5
+cheese,30
+
+----CURRENT PRODUCTS----
+This file follows same convention as PRODUCTS file, but with minor differences:
+1 - name of the product.
+2 - amount of product available, in grams, natural number.
