@@ -33,7 +33,7 @@ func init() {
 
 	var err1 error
 	timestamp := time.Now().Format("Jan-_2-15.04.05.000000") // format based on time.StampMicro
-	if logfile, err1 = os.Create("logs\\shopping-helper_" + timestamp + ".log"); err1 != nil {
+	if logfile, err1 = os.Create("logs/shopping-helper_" + timestamp + ".log"); err1 != nil {
 		log.Fatalf(ERROR+"Could not create logfile: %v\n", err1)
 	}
 }
