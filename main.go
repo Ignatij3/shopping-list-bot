@@ -47,6 +47,16 @@ func chooseNewRecipe(recips recipes.Recipes, remaining *kitchen.RemainingProduct
 	return
 }
 
+// TODO: // separate ingredient lists into separate files and place them next to pdfs.
+// TODO: // add functionality to the bot so that it is possible to add additional recipes into consideration from interaction.
+// TODO: // add functionality to the bot so that it automatically adds files (recipe.pdf and ingredients file) to correct folders and reads it.
+// TODO: // add support for different categories.
+// TODO: // add funct. to producre reports about daily consumption of calories/other stuff.
+// TODO: // restrict updating aforementioned data to the next week, starting from Monday, 00:00. (meaning, it is not possible to update nutrition data for this week)
+// TODO: // add differentiation between dishes that are cooked once and dishes that are cooked for the whole week (or variable amount of days).
+// TODO: // introduce into a bot planner that will visualize what days are missing breakfast/lunch/evening meal/other....
+// TODO: // real-time remaining product tracking (delete from database after a certain time in each day of the week has passed)
+
 func main() {
 	mylog = mylogger.NewLogger("MAIN: ")
 	defer mylogger.CloseResources()
@@ -103,11 +113,15 @@ func main() {
 	}
 
 	mylog.Println(mylogger.INFO + "Outputting result")
-	// presenting the user with output and calculate how much we bought (need minimal purchasing quantity for this) and how much is remaining after this
 	fmt.Println("Here's the list of products that you need to buy for the next week:")
 	i := 1
 	for name, product := range productDifference {
 		fmt.Printf("%d) %s (%d grams)\n", i, name, product)
 		i++
 	}
+	fmt.Printf("Lunch recipes are:\nLunch - %s\nSalad - %s\n", lunch.Name, salad.Name)
+
+	// imitate consuming all purchased foods and calculate remaining food
+	// ** IMPORTANT ** - this is only available when minimal purchasing quantity will be added to product data
+	// "Smallest package of XXX that you usually buy?"
 }
