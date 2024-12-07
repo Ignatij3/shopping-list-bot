@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"log"
 	"main/kitchen"
 	"main/mylogger"
 	"main/recipes"
 	"math"
+	"os"
+	"time"
 
 	"math/rand"
 )
@@ -78,10 +82,10 @@ func chooseRecipes(recipeList recipes.Recipes, remainingProducts kitchen.Remaini
 		}
 	}
 
-	for repeat := false; repeat; {
+	for repeat := true; repeat; {
 		answer := ""
 		for answer != "y" && answer != "n" {
-			fmt.Println("\nDo you wish to take products that you already have in the kitchen into account when choosing a new recipe?(y/n):")
+			fmt.Print("Do you wish to take products that you already have in the kitchen into account when choosing a new recipe?(y/n):")
 			fmt.Scan(&answer)
 		}
 
@@ -123,6 +127,7 @@ func chooseRecipes(recipeList recipes.Recipes, remainingProducts kitchen.Remaini
 	return allRecipes
 }
 
+// getShoppingCartList will derive shopping list from the recipes that will be cooked.
 func getShoppingCartList(allRecipes recipes.Recipes, productList recipes.Products, remainingProducts kitchen.RemainingProducts) recipes.Ingredients {
 	shoppingCartList := make(recipes.Ingredients)
 	totalNeeded := make(recipes.Ingredients)
@@ -152,15 +157,97 @@ func getShoppingCartList(allRecipes recipes.Recipes, productList recipes.Product
 		if totalNeeded[name] > remainingProducts[name] {
 			productDiff = totalNeeded[name] - remainingProducts[name]
 
-			if productDiff <= productList[name].ShopQty || !productList[name].Discrete {
-				shoppingCartList[name] = productDiff
+			if productDiff <= productList[name].ShopQty {
+				shoppingCartList[name] = productList[name].ShopQty
 			} else if productList[name].Discrete {
-				shoppingCartList[name] = productDiff * int(math.Ceil(float64(productDiff)/float64(productList[name].ShopQty)))
+				shoppingCartList[name] = productList[name].ShopQty * int(math.Ceil(float64(productDiff)/float64(productList[name].ShopQty)))
+			} else if !productList[name].Discrete {
+				shoppingCartList[name] = productDiff
 			}
 		}
 	}
 
 	return shoppingCartList
+}
+
+// saveResultsInAFile writes shopping list to the file.
+func saveResultsInAFile(allRecipes recipes.Recipes, shoppingCartList recipes.Ingredients) {
+	mylog.Println(mylogger.INFO + "Saving shopping list in a file")
+
+	if _, err := os.Stat("shopping-lists"); os.IsNotExist(err) {
+		if err := os.Mkdir("shopping-lists", 0755); err != nil {
+			log.Fatalf(mylogger.ERROR+"Could not create \"shopping-lists\" directory: %v\n", err)
+		}
+	}
+
+	fout, err := os.OpenFile("shopping-lists/shopping-list_"+time.Now().Format(time.DateOnly)+".txt", os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		mylog.Printf(mylogger.WARN+"Could not create shopping list for writing: %v\n", err)
+		return
+	}
+	defer fout.Close()
+
+	writer := bufio.NewWriter(fout)
+	i := 1
+	for name, weight := range shoppingCartList {
+		fmt.Fprintf(writer, "%d) %s (%dg)\n", i, name, weight)
+		i++
+	}
+
+	breakfasts := make(recipes.Recipes, 0)
+	lunches := make(recipes.Recipes, 0)
+	soups := make(recipes.Recipes, 0)
+	salads := make(recipes.Recipes, 0)
+	for _, recipe := range allRecipes {
+		switch recipe.Typ {
+		case recipes.BREAKFAST:
+			breakfasts = append(breakfasts, recipe)
+		case recipes.LUNCH:
+			lunches = append(lunches, recipe)
+		case recipes.SALAD:
+			salads = append(salads, recipe)
+		case recipes.SOUP:
+			soups = append(soups, recipe)
+		}
+	}
+
+	if len(breakfasts) > 0 {
+		fmt.Fprintln(writer, "\nBreakfasts")
+		i := 1
+		for _, breakf := range breakfasts {
+			fmt.Fprintf(writer, "%d) %s\n", i, breakf.Name)
+			i++
+		}
+	}
+
+	if len(lunches) > 0 {
+		fmt.Fprintln(writer, "\nLunches")
+		i := 1
+		for _, lunch := range lunches {
+			fmt.Fprintf(writer, "%d) %s\n", i, lunch.Name)
+			i++
+		}
+	}
+
+	if len(soups) > 0 {
+		fmt.Fprintln(writer, "\nSoups")
+		i := 1
+		for _, soup := range soups {
+			fmt.Fprintf(writer, "%d) %s\n", i, soup.Name)
+			i++
+		}
+	}
+
+	if len(salads) > 0 {
+		fmt.Fprintln(writer, "\nSoups")
+		i := 1
+		for _, salad := range salads {
+			fmt.Fprintf(writer, "%d) %s\n", i, salad.Name)
+			i++
+		}
+	}
+
+	writer.Flush()
 }
 
 func main() {
@@ -180,14 +267,15 @@ func main() {
 	fmt.Println("Here's the list of products that you need to buy for the next week:")
 	i := 1
 	for name, product := range shoppingCartList {
-		fmt.Printf("%d) %s (%d grams)\n", i, name, product)
+		fmt.Printf("%d) %s (%dg)\n", i, name, product)
 		i++
 	}
+	saveResultsInAFile(allRecipes, shoppingCartList)
 
-	// imitate consuming all purchased foods and calculate remaining food
+	// imitate purchasing and consuming all products
 	mylog.Println(mylogger.INFO + "Calculating how much food will remain")
 	for name, productWeight := range shoppingCartList {
-		remainingProducts.AddToProduct(name, productWeight)
+		remainingProducts[name] += productWeight
 	}
 
 	for _, recps := range allRecipes {
@@ -199,20 +287,23 @@ func main() {
 	// additionalNutrition is used to store amount of nutrition consumed with products
 	// It will be evenly distributed among workdays
 	var additionalNutrition recipes.Product
+	const CUTOFF_WEIGHT int = 100
 	for name, weight := range remainingProducts {
-		answer := ""
-		for answer != "y" && answer != "n" {
-			fmt.Printf("\nDo you wish to consume %s (%dg) entirely?(y/n):", name, weight)
-			fmt.Scan(&answer)
-		}
+		if weight <= CUTOFF_WEIGHT {
+			answer := ""
+			for answer != "y" && answer != "n" {
+				fmt.Printf("\nDo you wish to consume %s (%dg) entirely?(y/n):", name, weight)
+				fmt.Scan(&answer)
+			}
 
-		if answer == "y" {
-			mylog.Printf(mylogger.INFO+"Consuming product %s\n", name)
-			additionalNutrition.Calr += productList[name].Calr
-			additionalNutrition.Carb += productList[name].Carb
-			additionalNutrition.Prot += productList[name].Prot
-			additionalNutrition.Fats += productList[name].Fats
-			remainingProducts.DeleteProduct(name)
+			if answer == "y" {
+				mylog.Printf(mylogger.INFO+"Consuming product %s\n", name)
+				additionalNutrition.Calr += productList[name].Calr
+				additionalNutrition.Carb += productList[name].Carb
+				additionalNutrition.Prot += productList[name].Prot
+				additionalNutrition.Fats += productList[name].Fats
+				remainingProducts.DeleteProduct(name)
+			}
 		}
 	}
 
