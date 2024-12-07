@@ -78,6 +78,6 @@ func (d DishType) String() string {
 	case SOUP:
 		return "SOUP"
 	default:
-		return ""
+		return "__UNKNOWN__"
 	}
 }

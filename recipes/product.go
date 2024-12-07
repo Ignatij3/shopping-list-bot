@@ -8,11 +8,11 @@ import (
 )
 
 type (
-	// Product structure has nutritional information and weight, in grams (used for recipes).
+	// Product structure has nutritional information and shopping quantity (minimal that user usually buys), in grams (used for recipes).
 	Product struct {
-		// Weight           int
-		Calr             int
+		Calr, ShopQty    int
 		Prot, Fats, Carb float32
+		Discrete         bool
 	}
 	Products map[string]Product
 )
