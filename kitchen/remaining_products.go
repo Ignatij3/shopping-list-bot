@@ -62,7 +62,7 @@ func (p *RemainingProducts) AddToProduct(name string, weight int) (successful bo
 // If the product weight is smaller than that of the argument, the product is deleted.
 func (p *RemainingProducts) ReduceProduct(name string, weight int) (successful bool) {
 	if _, ok := (*p)[name]; ok {
-		if (*p)[name] < weight {
+		if (*p)[name] <= weight {
 			delete((*p), name)
 		} else {
 			(*p)[name] -= weight
