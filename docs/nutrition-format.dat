@@ -1,10 +1,12 @@
 FILEPATH: data/products.dat
-Each line contains 6 comma-separated entries for each product:
+Each line contains 7 comma-separated entries for each product:
 1 - name of the product.
 2 - calories in 100g, positive integer.
 3 - proteins in 100g, floating-point non-negative number.
 4 - fats in 100g, floating-point non-negative number.
 5 - carbohydrates in 100g, floating-point non-negative number.
+6 - minimal weight that the person usually purchases, positive integer. If the product is sold by weight, the number would be '1'.
+7 - '+' or '-' - whether the amount of product that can be bought is discreete (can only buy multiples of minimal weight) which is denoted by '-' or any amount above minimal can be bought which is denoted by '+'.
 
 All floating point numbers have precision of 1 number after point.
 
