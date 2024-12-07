@@ -129,43 +129,61 @@ func GetProducts() Products {
 	ings := make(Products)
 
 	var (
-		calr             int
+		calr, qty        int
 		prot, fats, carb float64
 		err              error
+		discrete         bool
 	)
 	for _, productLine := range readProductsFromFile() {
-		parsedLine := strings.Split(productLine, ",") // format: name,calories,proteins,fats,carbs
+		parsedLine := strings.Split(productLine, ",") // format: name,calories,proteins,fats,carbs,purchasing qty,is not discreete
 
-		if len(parsedLine) != 5 {
+		if len(parsedLine) != 7 {
 			mylog.Printf(mylogger.ERROR+"Product entry \"%v\" (len %d) has incorrect format, skipping", parsedLine, len(parsedLine))
 			continue
 		}
 
 		if calr, err = strconv.Atoi(parsedLine[1]); err != nil {
-			mylog.Printf(mylogger.ERROR+"Couldn't parse calories in product entry \"%q\", %v\n", parsedLine[1], err)
+			mylog.Printf(mylogger.WARN+"Couldn't parse calories in product entry \"%q\", %v\n", parsedLine[1], err)
 			continue
 		}
 
 		if prot, err = strconv.ParseFloat(parsedLine[2], 32); err != nil {
-			mylog.Printf(mylogger.ERROR+"Couldn't parse proteins in product entry \"%q\", %v\n", parsedLine[2], err)
+			mylog.Printf(mylogger.WARN+"Couldn't parse proteins in product entry \"%q\", %v\n", parsedLine[2], err)
 			continue
 		}
 
 		if fats, err = strconv.ParseFloat(parsedLine[3], 32); err != nil {
-			mylog.Printf(mylogger.ERROR+"Couldn't parse fats in product entry \"%q\", %v\n", parsedLine[3], err)
+			mylog.Printf(mylogger.WARN+"Couldn't parse fats in product entry \"%q\", %v\n", parsedLine[3], err)
 			continue
 		}
 
 		if carb, err = strconv.ParseFloat(parsedLine[4], 32); err != nil {
-			mylog.Printf(mylogger.ERROR+"Couldn't parse carbs in product entry \"%q\", %v\n", parsedLine[4], err)
+			mylog.Printf(mylogger.WARN+"Couldn't parse carbs in product entry \"%q\", %v\n", parsedLine[4], err)
+			continue
+		}
+
+		if qty, err = strconv.Atoi(parsedLine[5]); err != nil {
+			mylog.Printf(mylogger.WARN+"Couldn't parse purchasing quantity in product entry \"%q\", %v\n", parsedLine[5], err)
+			continue
+		}
+
+		switch parsedLine[6] {
+		case "+":
+			discrete = false
+		case "-":
+			discrete = true
+		default:
+			mylog.Printf(mylogger.WARN+"Couldn't parse boolean of product weight discreetness in product entry \"%q\", %v\n", parsedLine[5], err)
 			continue
 		}
 
 		ings[parsedLine[0]] = Product{
-			Calr: calr,
-			Prot: float32(prot),
-			Fats: float32(fats),
-			Carb: float32(carb),
+			Calr:     calr,
+			ShopQty:  qty,
+			Prot:     float32(prot),
+			Fats:     float32(fats),
+			Carb:     float32(carb),
+			Discrete: discrete,
 		}
 	}
 
