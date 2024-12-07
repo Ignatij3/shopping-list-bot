@@ -64,19 +64,17 @@ func SaveKitchenState(pr RemainingProducts) error {
 
 // SaveKitchenStateString writes product data to the file.
 func SaveKitchenStateString(pr []string) error {
-	mylog.Println(mylogger.INFO + "SaveKitchenStateString is executing")
-	fout, err := os.OpenFile("data/available-products.dat", os.O_TRUNC, 0644)
+	mylog.Printf(mylogger.INFO+"SaveKitchenStateString is executing with %v\n", pr)
+	fout, err := os.OpenFile("data/available-products.dat", os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		mylog.Printf(mylogger.WARN+"Could not open products database for writing: %v\n", err)
 		return err
 	}
 	defer fout.Close()
 
-	buf := bufio.NewWriter(fout)
 	for _, p := range pr {
-		buf.WriteString(p)
+		fout.WriteString(p)
 	}
-	buf.Flush()
 
 	return nil
 }

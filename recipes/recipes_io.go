@@ -223,7 +223,7 @@ func SaveProductsToFile(products Products) error {
 // SaveProductsToFileString flushes product data to the file.
 func SaveProductsToFileString(products []string) error {
 	mylog.Println(mylogger.INFO + "SaveProductsToFileString is executing")
-	fout, err := os.OpenFile("data/products.dat", os.O_TRUNC, 0644)
+	fout, err := os.OpenFile("data/products.dat", os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		mylog.Printf(mylogger.WARN+"Could not open products database for writing: %v\n", err)
 		return err

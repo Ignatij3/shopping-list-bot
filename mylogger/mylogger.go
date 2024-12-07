@@ -26,7 +26,7 @@ func CloseResources() {
 // init opens a file to write logs to.
 func init() {
 	if _, err := os.Stat("logs"); os.IsNotExist(err) {
-		if err := os.Mkdir("logs", os.ModeDir); err != nil {
+		if err := os.Mkdir("logs", 0755); err != nil {
 			log.Fatalf(ERROR+"Could not create \"logs\" directory: %v\n", err)
 		}
 	}
