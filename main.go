@@ -2,50 +2,13 @@ package main
 
 import (
 	"fmt"
-	kitchen "main/kitchen"
-	mylogger "main/mylogger"
-	recipes "main/recipes"
+	"main/kitchen"
+	"main/mylogger"
+	"main/recipes"
+	"math"
+
 	"math/rand"
 )
-
-var mylog *mylogger.Mylogger
-
-// chooseNewRecipe will randomly allocate a new recipe of specified type.
-// Changes must be saved to the file manually.
-func chooseNewRecipe(recips recipes.Recipes, remaining *kitchen.RemainingProducts, recipeType recipes.DishType) (newRec recipes.Recipe) {
-	mylog.Printf(mylogger.INFO+"chooseNewRecipe is called for %q recipe type\n", recipeType.String())
-	// first, we go through recipes that have the closest ingredients to what we already have
-	for dist := 1; dist < 2; dist++ {
-		if goodRecipes, ok := remaining.FindMatchingRecipes(recips, dist); ok {
-			for _, gr := range goodRecipes {
-				if recipeType == gr.Typ {
-					newRec = gr
-					mylog.Printf(mylogger.INFO+"New recipe is chosen: %v\n", newRec)
-					return
-				}
-			}
-		}
-	}
-
-	// checking if recipe of that type is present
-	found := false
-	for _, rec := range recips {
-		if rec.Typ == recipeType {
-			found = true
-		}
-	}
-	if !found {
-		mylog.Printf(mylogger.WARN+"Recipe of type %q was not found\n", recipeType.String())
-		return
-	}
-
-	// second, if nothing was found, we will choose one randomly
-	newRec = recips[rand.Intn(len(recips))]
-	for newRec.Typ != recipeType {
-		newRec = recips[rand.Intn(len(recips))]
-	}
-	return
-}
 
 // TODO: // separate ingredient lists into separate files and place them next to pdfs.
 // TODO: // add functionality to the bot so that it is possible to add additional recipes into consideration from interaction.
@@ -57,29 +20,111 @@ func chooseNewRecipe(recips recipes.Recipes, remaining *kitchen.RemainingProduct
 // TODO: // introduce into a bot planner that will visualize what days are missing breakfast/lunch/evening meal/other....
 // TODO: // real-time remaining product tracking (delete from database after a certain time in each day of the week has passed)
 
-func main() {
-	mylog = mylogger.NewLogger("MAIN: ")
-	defer mylogger.CloseResources()
+var mylog *mylogger.Mylogger
 
-	mylog.Println(mylogger.INFO + "Beginning execution")
-	// prods := recipes.GetProducts()
-	recps := recipes.GetRecipes()
-	mylog.Println(mylogger.INFO + "Reading kitchen state")
-	remainingProducts := kitchen.ReadKitchenState()
+// chooseNewRecipeFromExistingProducts will randomly allocate a new recipe of specified type.
+// false is returned if recipe of specified type was not found.
+func chooseNewRecipeFromExistingProducts(recipeList recipes.Recipes, remainingProducts kitchen.RemainingProducts, recipeType recipes.DishType) (newRec recipes.Recipe, found bool) {
+	mylog.Printf(mylogger.INFO+"chooseNewRecipe is called for %q recipe type\n", recipeType.String())
+	for dist := 1; dist < 2; dist++ {
+		if goodRecipes, ok := remainingProducts.FindMatchingRecipes(recipeList, dist); ok {
+			for _, gr := range goodRecipes {
+				if recipeType == gr.Typ {
+					newRec = gr
+					found = true
+					mylog.Printf(mylogger.INFO+"New recipe is chosen: %v\n", newRec)
+					return
+				}
+			}
+		}
+	}
+	return
+}
+
+// chooseRandomRecipe chooses random recipe from list provided.
+// If recipe does not exist, an empty recipe is returned.
+func chooseRandomRecipe(recipeList recipes.Recipes, recipeType recipes.DishType) recipes.Recipe {
+	// checking if recipe of specified type is present
+	// TODO: make an array of recipe types so users can add their
+	found := false
+	for _, rec := range recipeList {
+		if rec.Typ == recipeType {
+			found = true
+		}
+	}
+	if !found {
+		mylog.Printf(mylogger.WARN+"Recipe of type %q was not found\n", recipeType.String())
+		fmt.Printf("Recipe of type %q was not found\n", recipeType.String())
+		return recipes.Recipe{}
+	}
+
+	newRecipe := recipeList[rand.Intn(len(recipeList))]
+	for newRecipe.Typ != recipeType {
+		newRecipe = recipeList[rand.Intn(len(recipeList))]
+	}
+	return newRecipe
+}
+
+// chooseRecipes will return in a single array recipes that were chosen by user.
+func chooseRecipes(recipeList recipes.Recipes, remainingProducts kitchen.RemainingProducts) recipes.Recipes {
+	var lunch, salad recipes.Recipe
+	allRecipes := make(recipes.Recipes, 0)
 
 	mylog.Println(mylogger.INFO + "Choosing recipes")
-	// get all recipes to further calculate what is needed to buy
-
 	breakfasts := make(recipes.Recipes, 0, 7)
-	for _, recipeBreakfast := range recps {
+	for _, recipeBreakfast := range recipeList {
 		if recipeBreakfast.Typ == recipes.BREAKFAST {
 			breakfasts = append(breakfasts, recipeBreakfast)
 		}
 	}
 
-	lunch := chooseNewRecipe(recps, &remainingProducts, recipes.LUNCH)
-	salad := chooseNewRecipe(recps, &remainingProducts, recipes.SALAD)
+	for repeat := false; repeat; {
+		answer := ""
+		for answer != "y" && answer != "n" {
+			fmt.Println("\nDo you wish to take products that you already have in the kitchen into account when choosing a new recipe?(y/n):")
+			fmt.Scan(&answer)
+		}
 
+		if answer == "y" {
+			if newRecipe, ok := chooseNewRecipeFromExistingProducts(recipeList, remainingProducts, recipes.LUNCH); !ok {
+				lunch = chooseRandomRecipe(recipeList, recipes.LUNCH)
+			} else {
+				lunch = newRecipe
+			}
+			if newRecipe, ok := chooseNewRecipeFromExistingProducts(recipeList, remainingProducts, recipes.SALAD); !ok {
+				salad = chooseRandomRecipe(recipeList, recipes.SALAD)
+			} else {
+				salad = newRecipe
+			}
+		} else {
+			lunch = chooseRandomRecipe(recipeList, recipes.LUNCH)
+			salad = chooseRandomRecipe(recipeList, recipes.SALAD)
+		}
+		fmt.Printf("Here are the recipes which were chosen for you:\nLunch - %s\nSalad - %s\n\n", lunch.Name, salad.Name)
+
+		satisfied := ""
+		for satisfied != "y" && satisfied != "n" {
+			fmt.Print("\nAre you satisfied with the choice?(y/n):")
+			fmt.Scan(&satisfied)
+		}
+
+		if satisfied == "n" {
+			mylog.Println(mylogger.INFO + "Repeating procedure")
+			repeat = true
+		} else {
+			repeat = false
+		}
+	}
+
+	allRecipes = append(allRecipes, breakfasts...)
+	allRecipes = append(allRecipes, lunch)
+	allRecipes = append(allRecipes, salad)
+
+	return allRecipes
+}
+
+func getShoppingCartList(allRecipes recipes.Recipes, productList recipes.Products, remainingProducts kitchen.RemainingProducts) recipes.Ingredients {
+	shoppingCartList := make(recipes.Ingredients)
 	totalNeeded := make(recipes.Ingredients)
 
 	mylog.Println(mylogger.INFO + "Summing ingredients")
@@ -92,36 +137,89 @@ func main() {
 	}
 
 	// all ingredients are summed up and collected in one place to determine shopping cart (what will we buy)
-	for _, brkfast := range breakfasts {
-		for name, ing := range brkfast.GetIngredients() {
+	for _, recp := range allRecipes {
+		for name, ing := range recp.GetIngredients() {
 			totalNeeded[name] = correctIngredientSum(name, ing)
 		}
 	}
-	for name, ing := range lunch.GetIngredients() {
-		totalNeeded[name] = correctIngredientSum(name, ing)
-	}
-	for name, ing := range salad.GetIngredients() {
-		totalNeeded[name] = correctIngredientSum(name, ing)
-	}
 
-	// difference between what we have and what we need is calculated
-	productDifference := make(recipes.Ingredients)
+	// first, shortage of products is calculated, then, based on calculated shortage of products we
+	// calculate amount of products to be purchased.
+	// if shortage is more than minimal purchasing quantity and the product is packaged (only discreete
+	// steps of weight are allowed), then we buy it n times (n being ceil(diff/qty))
+	var productDiff int
 	for name := range totalNeeded {
 		if totalNeeded[name] > remainingProducts[name] {
-			productDifference[name] = totalNeeded[name] - remainingProducts[name]
+			productDiff = totalNeeded[name] - remainingProducts[name]
+
+			if productDiff <= productList[name].ShopQty || !productList[name].Discrete {
+				shoppingCartList[name] = productDiff
+			} else if productList[name].Discrete {
+				shoppingCartList[name] = productDiff * int(math.Ceil(float64(productDiff)/float64(productList[name].ShopQty)))
+			}
 		}
 	}
+
+	return shoppingCartList
+}
+
+func main() {
+	mylog = mylogger.NewLogger("MAIN: ")
+	defer mylogger.CloseResources()
+	mylog.Println(mylogger.INFO + "Beginning execution")
+
+	productList := recipes.GetProducts()
+	recipeList := recipes.GetRecipes()
+	remainingProducts := kitchen.ReadKitchenState()
+
+	// TODO: restructure this when scheduled recipes will be implemented
+	allRecipes := chooseRecipes(recipeList, remainingProducts)
+	shoppingCartList := getShoppingCartList(allRecipes, productList, remainingProducts)
 
 	mylog.Println(mylogger.INFO + "Outputting result")
 	fmt.Println("Here's the list of products that you need to buy for the next week:")
 	i := 1
-	for name, product := range productDifference {
+	for name, product := range shoppingCartList {
 		fmt.Printf("%d) %s (%d grams)\n", i, name, product)
 		i++
 	}
-	fmt.Printf("Lunch recipes are:\nLunch - %s\nSalad - %s\n", lunch.Name, salad.Name)
 
 	// imitate consuming all purchased foods and calculate remaining food
-	// ** IMPORTANT ** - this is only available when minimal purchasing quantity will be added to product data
-	// "Smallest package of XXX that you usually buy?"
+	mylog.Println(mylogger.INFO + "Calculating how much food will remain")
+	for name, productWeight := range shoppingCartList {
+		remainingProducts.AddToProduct(name, productWeight)
+	}
+
+	for _, recps := range allRecipes {
+		remainingProducts.CookRecipe(recps)
+	}
+
+	mylog.Println(mylogger.INFO + "Asking if the following remaining food will be consumed")
+
+	// additionalNutrition is used to store amount of nutrition consumed with products
+	// It will be evenly distributed among workdays
+	var additionalNutrition recipes.Product
+	for name, weight := range remainingProducts {
+		answer := ""
+		for answer != "y" && answer != "n" {
+			fmt.Printf("\nDo you wish to consume %s (%dg) entirely?(y/n):", name, weight)
+			fmt.Scan(&answer)
+		}
+
+		if answer == "y" {
+			mylog.Printf(mylogger.INFO+"Consuming product %s\n", name)
+			additionalNutrition.Calr += productList[name].Calr
+			additionalNutrition.Carb += productList[name].Carb
+			additionalNutrition.Prot += productList[name].Prot
+			additionalNutrition.Fats += productList[name].Fats
+			remainingProducts.DeleteProduct(name)
+		}
+	}
+
+	kitchen.SaveKitchenState(remainingProducts)
+
+	// mylog.Println(mylogger.INFO + "Calculating total energy input for every day")
+	// --IMPORTANT-- this will be available when generalization of recipe consumption will be added (with flexible schedules which user will set)
+
+	mylog.Println(mylogger.INFO + "Exiting...")
 }
